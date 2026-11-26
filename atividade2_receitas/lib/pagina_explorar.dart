@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-
-import 'dados.dart';
+import 'api.dart';
+import 'memoria.dart';
 import 'pagina_pesquisa.dart';
 import 'tema.dart';
+import 'telas_estado.dart';
 import 'widgets.dart';
 
 class PaginaExplorar extends StatefulWidget {
@@ -14,26 +15,33 @@ class PaginaExplorar extends StatefulWidget {
 
 class _PaginaExplorarState extends State<PaginaExplorar> {
   String estado = 'carregando'; // carregando, erro ou lista
+  bool buscando = false;
 
   @override
   void initState() {
     super.initState();
-    if (receitasCarregadas) {
+    // Só busca na API se ainda não tiver receitas na memória
+    if (receitasCarregadas.isNotEmpty) {
       estado = 'lista';
     } else {
       carregar();
     }
   }
 
-  // Simula a espera da API (2 segundos)
   Future<void> carregar() async {
+    if (buscando) return; // evita pedidos repetidos ao mesmo tempo
+    buscando = true;
     setState(() => estado = 'carregando');
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() {
-      estado = simularErro ? 'erro' : 'lista';
-      receitasCarregadas = !simularErro;
-    });
+
+    try {
+      receitasCarregadas = await buscarReceitas();
+      estado = 'lista';
+    } catch (e) {
+      estado = 'erro';
+    }
+
+    buscando = false;
+    if (mounted) setState(() {});
   }
 
   @override
@@ -45,32 +53,8 @@ class _PaginaExplorarState extends State<PaginaExplorar> {
   }
 
   Widget corpo() {
-    if (estado == 'carregando') {
-      return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Carregando receitas…'),
-          ],
-        ),
-      );
-    }
-
-    if (estado == 'erro') {
-      return TelaMensagem(
-        icone: Icons.error_outline,
-        titulo: 'Não foi possível carregar as receitas.',
-        texto: 'Verifique sua conexão e tente novamente.',
-        botoes: [
-          ElevatedButton(
-            onPressed: carregar,
-            child: const Text('Tentar novamente'),
-          ),
-        ],
-      );
-    }
+    if (estado == 'carregando') return const TelaCarregando();
+    if (estado == 'erro') return TelaErro(aoTentar: carregar);
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -94,7 +78,7 @@ class _PaginaExplorarState extends State<PaginaExplorar> {
         const SizedBox(height: 24),
         const Text('Receitas disponíveis', style: estiloTitulo),
         const Text('Selecione uma receita para ver o preparo.'),
-        for (final r in receitas)
+        for (final r in receitasCarregadas)
           CardReceita(receita: r, aoAtualizar: () => setState(() {})),
       ],
     );
