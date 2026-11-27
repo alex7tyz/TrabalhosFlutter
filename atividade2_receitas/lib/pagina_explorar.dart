@@ -37,6 +37,7 @@ class _PaginaExplorarState extends State<PaginaExplorar> {
       receitasCarregadas = await buscarReceitas();
       estado = 'lista';
     } catch (e) {
+      debugPrint('Erro ao carregar: $e');
       estado = 'erro';
     }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'receita.dart';
 
@@ -11,7 +12,8 @@ Future<List<Receita>> buscarReceitas({String? termo}) async {
     url = Uri.https('dummyjson.com', '/recipes/search', {'q': termo});
   }
 
-  final resposta = await http.get(url).timeout(const Duration(seconds: 10));
+  final resposta = await http.get(url).timeout(const Duration(seconds: 20));
+  debugPrint('GET $url -> status ${resposta.statusCode}');
 
   // Confere o status antes de usar a resposta
   if (resposta.statusCode != 200) {

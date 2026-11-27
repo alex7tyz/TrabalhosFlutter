@@ -47,6 +47,7 @@ class _PaginaPesquisaState extends State<PaginaPesquisa> {
       resultados = await buscarReceitas(termo: texto);
       estado = 'pronto';
     } catch (e) {
+      debugPrint('Erro ao pesquisar: $e');
       estado = 'falha';
     }
 
